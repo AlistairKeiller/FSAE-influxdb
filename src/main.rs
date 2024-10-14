@@ -4,7 +4,7 @@ use embedded_can::Frame as EmbeddedFrame;
 
 fn main() {
     // change to can0 once we have hardware
-    let mut sock = loop {
+    let sock = loop {
         match CanSocket::open("vcan0") {
             Ok(socket) => break socket,
             Err(_) => {
