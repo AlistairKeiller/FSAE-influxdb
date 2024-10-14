@@ -14,7 +14,22 @@ struct PackReading {
     highest_temp: u8,
     avg_temp: u8,
     relay: u8,
-    crc: u8
+}
+
+fn crc(data: &[u8]) -> u8 {
+    let mut crc = 0u8;
+
+    for &byte in data {
+        for i in 0..8 {
+            if ((crc >> 7) ^ (byte >> i) & 0x01) != 0 {
+                crc = (crc << 1) ^ 0x07;
+            } else {
+                crc <<= 1;
+            }
+        }
+    }
+
+    crc
 }
 
 #[tokio::main]
@@ -43,8 +58,12 @@ async fn main() -> Result<(), Error> {
                     highest_temp: data[4],
                     avg_temp: data[5],
                     relay: data[6],
-                    crc: data[7],
                 };
+
+                if crc(&data[..7]) != data[7] {
+                    eprintln!("CRC mismatch, skipping frame");
+                    continue;
+                }
             
 
                 if let Err(e) = client.query(pack_reading.into_query("weather")).await {
