@@ -66,7 +66,7 @@ async fn main() -> Result<(), Error> {
                 }
             
 
-                if let Err(e) = client.query(pack_reading.into_query("weather")).await {
+                if let Err(e) = client.query(pack_reading.into_query("pack")).await {
                     eprintln!("Failed to write to InfluxDB: {}", e);
                 }
             } else {
