@@ -1,7 +1,7 @@
 use std::time::Duration;
 use socketcan::{CanSocket, Socket};
 use embedded_can::Frame as EmbeddedFrame;
-use influxdb::{Client, Error, InfluxDbWriteable, ReadQuery, Timestamp};
+use influxdb::{Client, Error, InfluxDbWriteable};
 use chrono::{DateTime, Utc};
 
 
