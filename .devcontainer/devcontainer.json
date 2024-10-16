@@ -1,6 +1,6 @@
 {
     "name": "Rust",
     "image": "mcr.microsoft.com/devcontainers/rust:latest",
-    "postCreateCommand": "./postCreateCommand.sh",
+    "postCreateCommand": "./IDBv1.sh",
     "forwardPorts": [8086]
 }
