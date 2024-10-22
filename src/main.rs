@@ -9,11 +9,11 @@ use chrono::{DateTime, Utc};
 #[derive(InfluxDbWriteable)]
 struct PackReading {
     time: DateTime<Utc>,
-    voltage: u16,
-    current: u16,
-    highest_temp: u8,
-    avg_temp: u8,
-    relay: u8,
+    voltage: i16,
+    current: i16,
+    highest_temp: i8,
+    avg_temp: i8,
+    relay: i8,
 }
 
 fn crc(data: &[u8]) -> u8 {
