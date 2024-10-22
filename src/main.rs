@@ -34,7 +34,7 @@ async fn main() -> Result<(), Error> {
         match CanSocket::open("can0") {
             Ok(socket) => break socket,
             Err(_) => {
-                println!("Failed to open socket, retrying...");
+                eprintln!("Failed to open socket, retrying...");
             }
         }
     };
@@ -57,6 +57,8 @@ async fn main() -> Result<(), Error> {
                     //     eprintln!("CRC mismatch, skipping frame");
                     //     continue;
                     // }
+
+                    print!("Voltage: {}, Current: {}\n", pack_reading.voltage, pack_reading.current);
 
                     if let Err(e) = client.query(pack_reading.into_query("pack")).await {
                         eprintln!("Failed to write to InfluxDB: {}", e);
