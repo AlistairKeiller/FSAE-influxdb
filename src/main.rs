@@ -4,6 +4,8 @@ use futures_util::StreamExt;
 use influxdb::{Client, InfluxDbWriteable};
 use socketcan::{tokio::CanSocket, Id, Result, StandardId};
 use tokio;
+use tokio_serial::{SerialPortBuilderExt};
+use tokio::io::{AsyncBufReadExt, BufReader};
 
 #[derive(InfluxDbWriteable)]
 struct PackReading1 {
@@ -45,6 +47,14 @@ struct PackReading3 {
 impl PackReading3 {
     const ID: u16 = 0x6B2;
     const SIZE: usize = 7;
+}
+
+#[derive(InfluxDbWriteable)]
+struct UARTReading {
+    time: DateTime<Utc>,
+    x: u16,
+    y: u16,
+    z: u16,
 }
 
 #[tokio::main]
@@ -139,6 +149,52 @@ async fn main() -> Result<()> {
                         eprintln!("Failed to write to InfluxDB: {}", e);
                     }
                 }
+            }
+        }
+    });
+
+    tokio::spawn(async move {
+        let port = "/dev/ttyUSB0";
+        let baud_rate = 9600;
+
+        let serial = match tokio_serial::new(port, baud_rate).open_native_async() {
+            Ok(port) => port,
+            Err(e) => {
+                eprintln!("Failed to open serial port: {}", e);
+                return;
+            }
+        };
+
+        let client = Client::new("http://localhost:8086", "test");
+
+        let reader = BufReader::new(serial);
+        let mut lines = reader.lines();
+
+        while let Ok(Some(line)) = lines.next_line().await {
+            let parts: Vec<&str> = line.trim().split_whitespace().collect();
+            if parts.len() == 3 {
+                if let (Ok(x), Ok(y), Ok(z)) = (
+                    parts[0].parse::<u16>(),
+                    parts[1].parse::<u16>(),
+                    parts[2].parse::<u16>(),
+                ) {
+                    println!("X: {}, Y: {}, Z: {}", x, y, z);
+
+                    let reading = UARTReading {
+                        time: Utc::now(),
+                        x,
+                        y,
+                        z,
+                    };
+
+                    if let Err(e) = client.query(reading.into_query("uart")).await {
+                        eprintln!("Failed to write to InfluxDB: {}", e);
+                    }
+                } else {
+                    eprintln!("Failed to parse integers from line: {}", line);
+                }
+            } else {
+                eprintln!("Invalid data format: {}", line);
             }
         }
     });
