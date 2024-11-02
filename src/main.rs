@@ -38,8 +38,8 @@ struct PackReading3 {
     open_amphours: u8,
 }
 impl PackReading3 {
-    const ID: u16 = 0x3CB;
-    const SIZE: usize = 6;
+    const ID: u16 = 0x6B2;
+    const SIZE: usize = 7;
 }
 
 
@@ -69,10 +69,10 @@ async fn main() -> Result<()> {
             let pack_reading = PackReading1 {
             time: Utc::now(),
             current: i16::from_be_bytes([data[0], data[1]]),
-            voltage: i16::from_be_bytes([data[2], data[3]])
+            inst_voltage: i16::from_be_bytes([data[2], data[3]])
             };
 
-            println!("Current: {}, Voltage: {}", pack_reading.current, pack_reading.voltage);
+            println!("Current: {}, Voltage: {}", pack_reading.current, pack_reading.inst_voltage);
 
             if let Err(e) = client.query(pack_reading.into_query("pack")).await {
                 eprintln!("Failed to write to InfluxDB: {}", e);
