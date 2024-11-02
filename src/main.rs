@@ -8,8 +8,8 @@ use socketcan::{tokio::CanSocket, Id, StandardId, Result};
 #[derive(InfluxDbWriteable)]
 struct PackReading {
     time: DateTime<Utc>,
-    voltage: i16,
     current: i16,
+    voltage: i16,
 }
 
 #[tokio::main]
@@ -27,23 +27,27 @@ async fn main() -> Result<()> {
 
     while let Some(Ok(frame)) = sock.next().await {
         let data = frame.data();
-        if let Some(id) = StandardId::new(0x03B) {
-            if data.len() >= 5 && frame.id() == Id::Standard(id) {
-                let pack_reading = PackReading {
-                    time: Utc::now(),
-                    voltage: i16::from_be_bytes([data[0], data[1]]),
-                    current: i16::from_be_bytes([data[2], data[3]])
-                };
+        let id = match StandardId::new(0x03B) {
+            Some(id) => Id::Standard(id),
+            None => {
+                eprintln!("Invalid CAN ID {}", 0x03B);
+                continue;
+            }
+        };
+        if data.len() >= 5 && frame.id() == id {
+            let pack_reading = PackReading {
+                time: Utc::now(),
+                current: i16::from_be_bytes([data[0], data[1]]),
+                voltage: i16::from_be_bytes([data[2], data[3]])
+            };
 
-                println!("Voltage: {}, Current: {}", pack_reading.voltage, pack_reading.current);
+            println!("Current: {}, Voltage: {}", pack_reading.current, pack_reading.voltage);
 
-                if let Err(e) = client.query(pack_reading.into_query("pack")).await {
-                    eprintln!("Failed to write to InfluxDB: {}", e);
-                }
-            } else {
-                eprintln!("Received frame with insufficient data length");
+            if let Err(e) = client.query(pack_reading.into_query("pack")).await {
+                eprintln!("Failed to write to InfluxDB: {}", e);
             }
         }
+        // }
     }
 
     Ok(())
