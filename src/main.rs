@@ -9,7 +9,7 @@ use socketcan::{tokio::CanSocket, Id, StandardId, Result};
 struct PackReading1 {
     time: DateTime<Utc>,
     current: i16,
-    voltage: i16,
+    inst_voltage: i16,
 }
 
 impl PackReading1 {
@@ -19,13 +19,25 @@ impl PackReading1 {
 
 struct PackReading2 {
     time: DateTime<Utc>,
-    dlc: u8,
+    pack_dlc: u8,
     ccl: u8,
-    sim_soc: u8,
+    simulated_soc: u8,
     high_temp: u8,
     low_temp: u8,
 }
 impl PackReading2 {
+    const ID: u16 = 0x3CB;
+    const SIZE: usize = 6;
+}
+
+struct PackReading3 {
+    relay_state: DateTime<Utc>,
+    soc: u8,
+    resistance: i16,
+    open_voltage: i16,
+    open_amphours: u8,
+}
+impl PackReading3 {
     const ID: u16 = 0x3CB;
     const SIZE: usize = 6;
 }
