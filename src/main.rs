@@ -1,9 +1,9 @@
-use futures_util::StreamExt;
-use tokio;
 use chrono::{DateTime, Utc};
 use embedded_can::Frame as EmbeddedFrame;
+use futures_util::StreamExt;
 use influxdb::{Client, InfluxDbWriteable};
-use socketcan::{tokio::CanSocket, Id, StandardId, Result};
+use socketcan::{tokio::CanSocket, Id, Result, StandardId};
+use tokio;
 
 #[derive(InfluxDbWriteable)]
 struct PackReading1 {
@@ -73,7 +73,10 @@ async fn main() -> Result<()> {
                     inst_voltage: i16::from_be_bytes([data[2], data[3]]),
                 };
 
-                println!("Current: {}, Voltage: {}", pack_reading.current, pack_reading.inst_voltage);
+                println!(
+                    "Current: {}, Voltage: {}",
+                    pack_reading.current, pack_reading.inst_voltage
+                );
 
                 if let Err(e) = client.query(pack_reading.into_query("pack")).await {
                     eprintln!("Failed to write to InfluxDB: {}", e);
