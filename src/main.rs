@@ -17,31 +17,35 @@ impl PackReading1 {
     const SIZE: usize = 4;
 }
 
+#[derive(InfluxDbWriteable)]
 struct PackReading2 {
     time: DateTime<Utc>,
-    pack_dlc: u8,
+    dlc: u8,
     ccl: u8,
     simulated_soc: u8,
     high_temp: u8,
     low_temp: u8,
 }
+
 impl PackReading2 {
     const ID: u16 = 0x3CB;
     const SIZE: usize = 6;
 }
 
+#[derive(InfluxDbWriteable)]
 struct PackReading3 {
-    relay_state: DateTime<Utc>,
+    time: DateTime<Utc>,
+    relay_state: u8,
     soc: u8,
     resistance: i16,
     open_voltage: i16,
-    open_amphours: u8,
+    amphours: u8,
 }
+
 impl PackReading3 {
     const ID: u16 = 0x6B2;
     const SIZE: usize = 7;
 }
-
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -58,24 +62,72 @@ async fn main() -> Result<()> {
 
     while let Some(Ok(frame)) = sock.next().await {
         let data = frame.data();
-        let id = match StandardId::new(PackReading1::ID) {
-            Some(id) => Id::Standard(id),
-            None => {
-                eprintln!("Invalid CAN ID {}", PackReading1::ID);
+        let id = frame.id();
+
+        // Process PackReading1
+        if let Some(std_id) = StandardId::new(PackReading1::ID) {
+            if id == Id::Standard(std_id) && data.len() >= PackReading1::SIZE {
+                let pack_reading = PackReading1 {
+                    time: Utc::now(),
+                    current: i16::from_be_bytes([data[0], data[1]]),
+                    inst_voltage: i16::from_be_bytes([data[2], data[3]]),
+                };
+
+                println!("Current: {}, Voltage: {}", pack_reading.current, pack_reading.inst_voltage);
+
+                if let Err(e) = client.query(pack_reading.into_query("pack")).await {
+                    eprintln!("Failed to write to InfluxDB: {}", e);
+                }
                 continue;
             }
-        };
-        if frame.id() == id && data.len() >= PackReading1::SIZE {
-            let pack_reading = PackReading1 {
-            time: Utc::now(),
-            current: i16::from_be_bytes([data[0], data[1]]),
-            inst_voltage: i16::from_be_bytes([data[2], data[3]])
-            };
+        }
 
-            println!("Current: {}, Voltage: {}", pack_reading.current, pack_reading.inst_voltage);
+        // Process PackReading2
+        if let Some(std_id) = StandardId::new(PackReading2::ID) {
+            if id == Id::Standard(std_id) && data.len() >= PackReading2::SIZE {
+                let pack_reading = PackReading2 {
+                    time: Utc::now(),
+                    dlc: data[0],
+                    ccl: data[1],
+                    simulated_soc: data[2],
+                    high_temp: data[3],
+                    low_temp: data[4],
+                };
 
-            if let Err(e) = client.query(pack_reading.into_query("pack")).await {
-                eprintln!("Failed to write to InfluxDB: {}", e);
+                println!("DLC: {}, CCL: {}, SOC: {}", pack_reading.dlc, pack_reading.ccl, pack_reading.simulated_soc);
+                println!("High Temp: {}, Low Temp: {}", pack_reading.high_temp, pack_reading.low_temp);
+
+                if let Err(e) = client.query(pack_reading.into_query("pack")).await {
+                    eprintln!("Failed to write to InfluxDB: {}", e);
+                }
+                continue;
+            }
+        }
+
+        // Process PackReading3
+        if let Some(std_id) = StandardId::new(PackReading3::ID) {
+            if id == Id::Standard(std_id) && data.len() >= PackReading3::SIZE {
+                let pack_reading = PackReading3 {
+                    time: Utc::now(),
+                    relay_state: data[0],
+                    soc: data[1],
+                    resistance: i16::from_be_bytes([data[2], data[3]]),
+                    open_voltage: i16::from_be_bytes([data[4], data[5]]),
+                    amphours: data[6],
+                };
+
+                println!(
+                    "Relay State: {}, SOC: {}, Resistance: {}, Open Voltage: {}, Open Amphours: {}",
+                    pack_reading.relay_state,
+                    pack_reading.soc,
+                    pack_reading.resistance,
+                    pack_reading.open_voltage,
+                    pack_reading.amphours
+                );
+
+                if let Err(e) = client.query(pack_reading.into_query("pack")).await {
+                    eprintln!("Failed to write to InfluxDB: {}", e);
+                }
             }
         }
     }
