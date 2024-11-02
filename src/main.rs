@@ -94,8 +94,14 @@ async fn main() -> Result<()> {
                     low_temp: data[4],
                 };
 
-                println!("DLC: {}, CCL: {}, SOC: {}", pack_reading.dlc, pack_reading.ccl, pack_reading.simulated_soc);
-                println!("High Temp: {}, Low Temp: {}", pack_reading.high_temp, pack_reading.low_temp);
+                println!(
+                    "DLC: {}, CCL: {}, SOC: {}, High Temp: {}, Low Temp: {}",
+                    pack_reading.dlc,
+                    pack_reading.ccl,
+                    pack_reading.simulated_soc,
+                    pack_reading.high_temp,
+                    pack_reading.low_temp
+                );
 
                 if let Err(e) = client.query(pack_reading.into_query("pack")).await {
                     eprintln!("Failed to write to InfluxDB: {}", e);
