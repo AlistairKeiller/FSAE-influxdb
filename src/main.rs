@@ -12,6 +12,10 @@ struct PackReading {
     voltage: i16,
 }
 
+impl PackReading {
+    const ID: u16 = 0x03B;
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let mut sock = loop {
@@ -27,10 +31,10 @@ async fn main() -> Result<()> {
 
     while let Some(Ok(frame)) = sock.next().await {
         let data = frame.data();
-        let id = match StandardId::new(0x03B) {
+        let id = match StandardId::new(PackReading::ID) {
             Some(id) => Id::Standard(id),
             None => {
-                eprintln!("Invalid CAN ID {}", 0x03B);
+                eprintln!("Invalid CAN ID {}", PackReading::ID);
                 continue;
             }
         };
@@ -47,7 +51,6 @@ async fn main() -> Result<()> {
                 eprintln!("Failed to write to InfluxDB: {}", e);
             }
         }
-        // }
     }
 
     Ok(())
