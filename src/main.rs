@@ -6,16 +6,30 @@ use influxdb::{Client, InfluxDbWriteable};
 use socketcan::{tokio::CanSocket, Id, StandardId, Result};
 
 #[derive(InfluxDbWriteable)]
-struct PackReading {
+struct PackReading1 {
     time: DateTime<Utc>,
     current: i16,
     voltage: i16,
 }
 
-impl PackReading {
+impl PackReading1 {
     const ID: u16 = 0x03B;
     const SIZE: usize = 4;
 }
+
+struct PackReading2 {
+    time: DateTime<Utc>,
+    dlc: u8,
+    ccl: u8,
+    sim_soc: u8,
+    high_temp: u8,
+    low_temp: u8,
+}
+impl PackReading2 {
+    const ID: u16 = 0x3CB;
+    const SIZE: usize = 6;
+}
+
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -32,15 +46,15 @@ async fn main() -> Result<()> {
 
     while let Some(Ok(frame)) = sock.next().await {
         let data = frame.data();
-        let id = match StandardId::new(PackReading::ID) {
+        let id = match StandardId::new(PackReading1::ID) {
             Some(id) => Id::Standard(id),
             None => {
-                eprintln!("Invalid CAN ID {}", PackReading::ID);
+                eprintln!("Invalid CAN ID {}", PackReading1::ID);
                 continue;
             }
         };
-        if frame.id() == id && data.len() >= PackReading::SIZE {
-            let pack_reading = PackReading {
+        if frame.id() == id && data.len() >= PackReading1::SIZE {
+            let pack_reading = PackReading1 {
             time: Utc::now(),
             current: i16::from_be_bytes([data[0], data[1]]),
             voltage: i16::from_be_bytes([data[2], data[3]])
