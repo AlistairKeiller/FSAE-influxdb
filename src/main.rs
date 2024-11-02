@@ -49,17 +49,18 @@ impl PackReading3 {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut sock = loop {
-        match CanSocket::open("can0") {
-            Ok(socket) => break socket,
-            Err(_) => {
-                eprintln!("Failed to open socket, retrying...");
-            }
-        }
-    };
-
     tokio::spawn(async move {
+        let mut sock = loop {
+            match CanSocket::open("can0") {
+                Ok(socket) => break socket,
+                Err(_) => {
+                    eprintln!("Failed to open socket, retrying...");
+                }
+            }
+        };
+
         let client = Client::new("http://localhost:8086", "test");
+
         while let Some(Ok(frame)) = sock.next().await {
             let data = frame.data();
             let id = frame.id();
