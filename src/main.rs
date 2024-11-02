@@ -52,9 +52,9 @@ impl PackReading3 {
 #[derive(InfluxDbWriteable)]
 struct UARTReading {
     time: DateTime<Utc>,
-    x: u16,
-    y: u16,
-    z: u16,
+    brake: u16,
+    shock_a: u16,
+    shock_b: u16,
 }
 
 #[tokio::main]
@@ -173,18 +173,18 @@ async fn main() -> Result<()> {
         while let Ok(Some(line)) = lines.next_line().await {
             let parts: Vec<&str> = line.trim().split_whitespace().collect();
             if parts.len() == 3 {
-                if let (Ok(x), Ok(y), Ok(z)) = (
+                if let (Ok(brake), Ok(shock_a), Ok(shock_b)) = (
                     parts[0].parse::<u16>(),
                     parts[1].parse::<u16>(),
                     parts[2].parse::<u16>(),
                 ) {
-                    println!("X: {}, Y: {}, Z: {}", x, y, z);
+                    println!("Brake: {}, ShockA: {}, ShockB: {}", brake, shock_a, shock_b);
 
                     let reading = UARTReading {
                         time: Utc::now(),
-                        x,
-                        y,
-                        z,
+                        brake,
+                        shock_a,
+                        shock_b,
                     };
 
                     if let Err(e) = client.query(reading.into_query("uart")).await {
