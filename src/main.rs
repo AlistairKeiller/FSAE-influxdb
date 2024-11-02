@@ -14,6 +14,7 @@ struct PackReading {
 
 impl PackReading {
     const ID: u16 = 0x03B;
+    const SIZE: usize = 4;
 }
 
 #[tokio::main]
@@ -38,11 +39,11 @@ async fn main() -> Result<()> {
                 continue;
             }
         };
-        if data.len() >= 5 && frame.id() == id {
+        if frame.id() == id && data.len() >= PackReading::SIZE {
             let pack_reading = PackReading {
-                time: Utc::now(),
-                current: i16::from_be_bytes([data[0], data[1]]),
-                voltage: i16::from_be_bytes([data[2], data[3]])
+            time: Utc::now(),
+            current: i16::from_be_bytes([data[0], data[1]]),
+            voltage: i16::from_be_bytes([data[2], data[3]])
             };
 
             println!("Current: {}, Voltage: {}", pack_reading.current, pack_reading.voltage);
