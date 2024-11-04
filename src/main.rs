@@ -4,8 +4,8 @@ use futures_util::StreamExt;
 use influxdb::{Client, InfluxDbWriteable};
 use socketcan::{tokio::CanSocket, Id, Result, StandardId};
 use tokio;
-use tokio_serial::SerialPortBuilderExt;
 use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio_serial::SerialPortBuilderExt;
 
 #[derive(InfluxDbWriteable)]
 struct PackReading1 {
@@ -59,7 +59,6 @@ struct UARTReading {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-
     tokio::spawn(async move {
         let client = Client::new("http://localhost:8086", "data");
 
@@ -84,7 +83,8 @@ async fn main() -> Result<()> {
                                     pack_reading.current, pack_reading.inst_voltage
                                 );
 
-                                if let Err(e) = client.query(pack_reading.into_query("pack")).await {
+                                if let Err(e) = client.query(pack_reading.into_query("pack")).await
+                                {
                                     eprintln!("Failed to write to InfluxDB: {}", e);
                                 }
                                 continue;
@@ -112,7 +112,8 @@ async fn main() -> Result<()> {
                                     pack_reading.low_temp
                                 );
 
-                                if let Err(e) = client.query(pack_reading.into_query("pack")).await {
+                                if let Err(e) = client.query(pack_reading.into_query("pack")).await
+                                {
                                     eprintln!("Failed to write to InfluxDB: {}", e);
                                 }
                                 continue;
@@ -140,7 +141,8 @@ async fn main() -> Result<()> {
                                     pack_reading.amphours
                                 );
 
-                                if let Err(e) = client.query(pack_reading.into_query("pack")).await {
+                                if let Err(e) = client.query(pack_reading.into_query("pack")).await
+                                {
                                     eprintln!("Failed to write to InfluxDB: {}", e);
                                 }
                             }
@@ -175,7 +177,10 @@ async fn main() -> Result<()> {
                                 parts[1].parse::<u16>(),
                                 parts[2].parse::<u16>(),
                             ) {
-                                println!("Brake: {}, ShockA: {}, ShockB: {}", brake, shock_a, shock_b);
+                                println!(
+                                    "Brake: {}, ShockA: {}, ShockB: {}",
+                                    brake, shock_a, shock_b
+                                );
 
                                 let reading = UARTReading {
                                     time: Utc::now(),
