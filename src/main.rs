@@ -60,7 +60,7 @@ impl PackReading3 {
     const NAME: &str = "pack3";
 }
 
-#[derive(InfluxDbWriteable)]
+#[derive(InfluxDbWriteable, Debug)]
 struct UARTReading {
     time: DateTime<Utc>,
     brake: u16,
@@ -175,17 +175,14 @@ async fn main() -> Result<()> {
                                 parts[1].parse::<u16>(),
                                 parts[2].parse::<u16>(),
                             ) {
-                                println!(
-                                    "Brake: {}, ShockA: {}, ShockB: {}",
-                                    brake, shock_a, shock_b
-                                );
-
                                 let reading = UARTReading {
                                     time: Utc::now(),
                                     brake,
                                     shock_a,
                                     shock_b,
                                 };
+
+                                println!("{:?}", reading);
 
                                 if let Err(e) = client.query(reading.into_query("uart")).await {
                                     eprintln!("Failed to write to InfluxDB: {}", e);
