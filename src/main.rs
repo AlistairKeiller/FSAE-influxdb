@@ -4,7 +4,7 @@ use futures_util::StreamExt;
 use influxdb::{Client, InfluxDbWriteable};
 use socketcan::{tokio::CanSocket, Id, Result, StandardId};
 use tokio;
-use tokio_serial::{SerialPortBuilderExt};
+use tokio_serial::SerialPortBuilderExt;
 use tokio::io::{AsyncBufReadExt, BufReader};
 
 #[derive(InfluxDbWriteable)]
@@ -59,142 +59,147 @@ struct UARTReading {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+
     tokio::spawn(async move {
-        let mut sock = loop {
+        let client = Client::new("http://localhost:8086", "data");
+
+        loop {
             match CanSocket::open("can0") {
-                Ok(socket) => break socket,
+                Ok(mut sock) => {
+                    while let Some(Ok(frame)) = sock.next().await {
+                        let data = frame.data();
+                        let id = frame.id();
+
+                        // Process PackReading1
+                        if let Some(std_id) = StandardId::new(PackReading1::ID) {
+                            if id == Id::Standard(std_id) && data.len() >= PackReading1::SIZE {
+                                let pack_reading = PackReading1 {
+                                    time: Utc::now(),
+                                    current: i16::from_be_bytes([data[0], data[1]]),
+                                    inst_voltage: i16::from_be_bytes([data[2], data[3]]),
+                                };
+
+                                println!(
+                                    "Current: {}, Voltage: {}",
+                                    pack_reading.current, pack_reading.inst_voltage
+                                );
+
+                                if let Err(e) = client.query(pack_reading.into_query("pack")).await {
+                                    eprintln!("Failed to write to InfluxDB: {}", e);
+                                }
+                                continue;
+                            }
+                        }
+
+                        // Process PackReading2
+                        if let Some(std_id) = StandardId::new(PackReading2::ID) {
+                            if id == Id::Standard(std_id) && data.len() >= PackReading2::SIZE {
+                                let pack_reading = PackReading2 {
+                                    time: Utc::now(),
+                                    dlc: data[0],
+                                    ccl: data[1],
+                                    simulated_soc: data[2],
+                                    high_temp: data[3],
+                                    low_temp: data[4],
+                                };
+
+                                println!(
+                                    "DLC: {}, CCL: {}, SOC: {}, High Temp: {}, Low Temp: {}",
+                                    pack_reading.dlc,
+                                    pack_reading.ccl,
+                                    pack_reading.simulated_soc,
+                                    pack_reading.high_temp,
+                                    pack_reading.low_temp
+                                );
+
+                                if let Err(e) = client.query(pack_reading.into_query("pack")).await {
+                                    eprintln!("Failed to write to InfluxDB: {}", e);
+                                }
+                                continue;
+                            }
+                        }
+
+                        // Process PackReading3
+                        if let Some(std_id) = StandardId::new(PackReading3::ID) {
+                            if id == Id::Standard(std_id) && data.len() >= PackReading3::SIZE {
+                                let pack_reading = PackReading3 {
+                                    time: Utc::now(),
+                                    relay_state: data[0],
+                                    soc: data[1],
+                                    resistance: i16::from_be_bytes([data[2], data[3]]),
+                                    open_voltage: i16::from_be_bytes([data[4], data[5]]),
+                                    amphours: data[6],
+                                };
+
+                                println!(
+                                    "Relay State: {}, SOC: {}, Resistance: {}, Open Voltage: {}, Open Amphours: {}",
+                                    pack_reading.relay_state,
+                                    pack_reading.soc,
+                                    pack_reading.resistance,
+                                    pack_reading.open_voltage,
+                                    pack_reading.amphours
+                                );
+
+                                if let Err(e) = client.query(pack_reading.into_query("pack")).await {
+                                    eprintln!("Failed to write to InfluxDB: {}", e);
+                                }
+                            }
+                        }
+                    }
+                    eprintln!("CAN socket disconnected...");
+                }
                 Err(_) => {
-                    eprintln!("Failed to open socket, retrying...");
-                }
-            }
-        };
-
-        let client = Client::new("http://localhost:8086", "test");
-
-        while let Some(Ok(frame)) = sock.next().await {
-            let data = frame.data();
-            let id = frame.id();
-
-            // Process PackReading1
-            if let Some(std_id) = StandardId::new(PackReading1::ID) {
-                if id == Id::Standard(std_id) && data.len() >= PackReading1::SIZE {
-                    let pack_reading = PackReading1 {
-                        time: Utc::now(),
-                        current: i16::from_be_bytes([data[0], data[1]]),
-                        inst_voltage: i16::from_be_bytes([data[2], data[3]]),
-                    };
-
-                    println!(
-                        "Current: {}, Voltage: {}",
-                        pack_reading.current, pack_reading.inst_voltage
-                    );
-
-                    if let Err(e) = client.query(pack_reading.into_query("pack")).await {
-                        eprintln!("Failed to write to InfluxDB: {}", e);
-                    }
-                    continue;
-                }
-            }
-
-            // Process PackReading2
-            if let Some(std_id) = StandardId::new(PackReading2::ID) {
-                if id == Id::Standard(std_id) && data.len() >= PackReading2::SIZE {
-                    let pack_reading = PackReading2 {
-                        time: Utc::now(),
-                        dlc: data[0],
-                        ccl: data[1],
-                        simulated_soc: data[2],
-                        high_temp: data[3],
-                        low_temp: data[4],
-                    };
-
-                    println!(
-                        "DLC: {}, CCL: {}, SOC: {}, High Temp: {}, Low Temp: {}",
-                        pack_reading.dlc,
-                        pack_reading.ccl,
-                        pack_reading.simulated_soc,
-                        pack_reading.high_temp,
-                        pack_reading.low_temp
-                    );
-
-                    if let Err(e) = client.query(pack_reading.into_query("pack")).await {
-                        eprintln!("Failed to write to InfluxDB: {}", e);
-                    }
-                    continue;
-                }
-            }
-
-            // Process PackReading3
-            if let Some(std_id) = StandardId::new(PackReading3::ID) {
-                if id == Id::Standard(std_id) && data.len() >= PackReading3::SIZE {
-                    let pack_reading = PackReading3 {
-                        time: Utc::now(),
-                        relay_state: data[0],
-                        soc: data[1],
-                        resistance: i16::from_be_bytes([data[2], data[3]]),
-                        open_voltage: i16::from_be_bytes([data[4], data[5]]),
-                        amphours: data[6],
-                    };
-
-                    println!(
-                        "Relay State: {}, SOC: {}, Resistance: {}, Open Voltage: {}, Open Amphours: {}",
-                        pack_reading.relay_state,
-                        pack_reading.soc,
-                        pack_reading.resistance,
-                        pack_reading.open_voltage,
-                        pack_reading.amphours
-                    );
-
-                    if let Err(e) = client.query(pack_reading.into_query("pack")).await {
-                        eprintln!("Failed to write to InfluxDB: {}", e);
-                    }
+                    eprintln!("Failed to open CAN socket, retrying...");
+                    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
                 }
             }
         }
     });
 
     tokio::spawn(async move {
+        let client = Client::new("http://localhost:8086", "data");
         let port = "/dev/ttyUSB0";
         let baud_rate = 9600;
 
-        let serial = match tokio_serial::new(port, baud_rate).open_native_async() {
-            Ok(port) => port,
-            Err(e) => {
-                eprintln!("Failed to open serial port: {}", e);
-                return;
-            }
-        };
+        loop {
+            match tokio_serial::new(port, baud_rate).open_native_async() {
+                Ok(serial) => {
+                    let reader = BufReader::new(serial);
+                    let mut lines = reader.lines();
 
-        let client = Client::new("http://localhost:8086", "test");
+                    while let Ok(Some(line)) = lines.next_line().await {
+                        let parts: Vec<&str> = line.trim().split_whitespace().collect();
+                        if parts.len() == 3 {
+                            if let (Ok(brake), Ok(shock_a), Ok(shock_b)) = (
+                                parts[0].parse::<u16>(),
+                                parts[1].parse::<u16>(),
+                                parts[2].parse::<u16>(),
+                            ) {
+                                println!("Brake: {}, ShockA: {}, ShockB: {}", brake, shock_a, shock_b);
 
-        let reader = BufReader::new(serial);
-        let mut lines = reader.lines();
+                                let reading = UARTReading {
+                                    time: Utc::now(),
+                                    brake,
+                                    shock_a,
+                                    shock_b,
+                                };
 
-        while let Ok(Some(line)) = lines.next_line().await {
-            let parts: Vec<&str> = line.trim().split_whitespace().collect();
-            if parts.len() == 3 {
-                if let (Ok(brake), Ok(shock_a), Ok(shock_b)) = (
-                    parts[0].parse::<u16>(),
-                    parts[1].parse::<u16>(),
-                    parts[2].parse::<u16>(),
-                ) {
-                    println!("Brake: {}, ShockA: {}, ShockB: {}", brake, shock_a, shock_b);
-
-                    let reading = UARTReading {
-                        time: Utc::now(),
-                        brake,
-                        shock_a,
-                        shock_b,
-                    };
-
-                    if let Err(e) = client.query(reading.into_query("uart")).await {
-                        eprintln!("Failed to write to InfluxDB: {}", e);
+                                if let Err(e) = client.query(reading.into_query("uart")).await {
+                                    eprintln!("Failed to write to InfluxDB: {}", e);
+                                }
+                            } else {
+                                eprintln!("Failed to parse integers from line: {}", line);
+                            }
+                        } else {
+                            eprintln!("Invalid data format: {}", line);
+                        }
                     }
-                } else {
-                    eprintln!("Failed to parse integers from line: {}", line);
+                    eprintln!("Serial port disconnected...");
                 }
-            } else {
-                eprintln!("Invalid data format: {}", line);
+                Err(e) => {
+                    eprintln!("Failed to open serial port: {}", e);
+                    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                }
             }
         }
     });
