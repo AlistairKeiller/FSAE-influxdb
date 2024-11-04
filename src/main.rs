@@ -7,7 +7,15 @@ use tokio;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio_serial::SerialPortBuilderExt;
 
-#[derive(InfluxDbWriteable)]
+const INFLUXDB_URL: &str = "http://localhost:8086";
+const INFLUXDB_DATABASE: &str = "data";
+const CAN_INTERFACE: &str = "can0";
+const SERIAL_PORT: &str = "/dev/ttyUSB0";
+const SERIAL_BAUD_RATE: u32 = 9600;
+const BACKUP_INTERVAL_SECS: u64 = 60;
+const BACKUP_PATH: &str = "/path";
+
+#[derive(InfluxDbWriteable, Debug)]
 struct PackReading1 {
     time: DateTime<Utc>,
     current: i16,
@@ -17,9 +25,10 @@ struct PackReading1 {
 impl PackReading1 {
     const ID: u16 = 0x03B;
     const SIZE: usize = 4;
+    const NAME: &str = "pack1";
 }
 
-#[derive(InfluxDbWriteable)]
+#[derive(InfluxDbWriteable, Debug)]
 struct PackReading2 {
     time: DateTime<Utc>,
     dlc: u8,
@@ -32,9 +41,10 @@ struct PackReading2 {
 impl PackReading2 {
     const ID: u16 = 0x3CB;
     const SIZE: usize = 6;
+    const NAME: &str = "pack2";
 }
 
-#[derive(InfluxDbWriteable)]
+#[derive(InfluxDbWriteable, Debug)]
 struct PackReading3 {
     time: DateTime<Utc>,
     relay_state: u8,
@@ -47,6 +57,7 @@ struct PackReading3 {
 impl PackReading3 {
     const ID: u16 = 0x6B2;
     const SIZE: usize = 7;
+    const NAME: &str = "pack3";
 }
 
 #[derive(InfluxDbWriteable)]
@@ -60,10 +71,10 @@ struct UARTReading {
 #[tokio::main]
 async fn main() -> Result<()> {
     tokio::spawn(async move {
-        let client = Client::new("http://localhost:8086", "data");
+        let client = Client::new(INFLUXDB_URL, INFLUXDB_DATABASE);
 
         loop {
-            match CanSocket::open("can0") {
+            match CanSocket::open(CAN_INTERFACE) {
                 Ok(mut sock) => {
                     while let Some(Ok(frame)) = sock.next().await {
                         let data = frame.data();
@@ -78,12 +89,11 @@ async fn main() -> Result<()> {
                                     inst_voltage: i16::from_be_bytes([data[2], data[3]]),
                                 };
 
-                                println!(
-                                    "Current: {}, Voltage: {}",
-                                    pack_reading.current, pack_reading.inst_voltage
-                                );
+                                println!("{:?}", pack_reading);
 
-                                if let Err(e) = client.query(pack_reading.into_query("pack")).await
+                                if let Err(e) = client
+                                    .query(pack_reading.into_query(PackReading1::NAME))
+                                    .await
                                 {
                                     eprintln!("Failed to write to InfluxDB: {}", e);
                                 }
@@ -103,16 +113,11 @@ async fn main() -> Result<()> {
                                     low_temp: data[4],
                                 };
 
-                                println!(
-                                    "DLC: {}, CCL: {}, SOC: {}, High Temp: {}, Low Temp: {}",
-                                    pack_reading.dlc,
-                                    pack_reading.ccl,
-                                    pack_reading.simulated_soc,
-                                    pack_reading.high_temp,
-                                    pack_reading.low_temp
-                                );
+                                println!("{:?}", pack_reading);
 
-                                if let Err(e) = client.query(pack_reading.into_query("pack")).await
+                                if let Err(e) = client
+                                    .query(pack_reading.into_query(PackReading2::NAME))
+                                    .await
                                 {
                                     eprintln!("Failed to write to InfluxDB: {}", e);
                                 }
@@ -132,16 +137,11 @@ async fn main() -> Result<()> {
                                     amphours: data[6],
                                 };
 
-                                println!(
-                                    "Relay State: {}, SOC: {}, Resistance: {}, Open Voltage: {}, Open Amphours: {}",
-                                    pack_reading.relay_state,
-                                    pack_reading.soc,
-                                    pack_reading.resistance,
-                                    pack_reading.open_voltage,
-                                    pack_reading.amphours
-                                );
+                                println!("{:?}", pack_reading);
 
-                                if let Err(e) = client.query(pack_reading.into_query("pack")).await
+                                if let Err(e) = client
+                                    .query(pack_reading.into_query(PackReading3::NAME))
+                                    .await
                                 {
                                     eprintln!("Failed to write to InfluxDB: {}", e);
                                 }
@@ -159,12 +159,10 @@ async fn main() -> Result<()> {
     });
 
     tokio::spawn(async move {
-        let client = Client::new("http://localhost:8086", "data");
-        let port = "/dev/ttyUSB0";
-        let baud_rate = 9600;
+        let client = Client::new(INFLUXDB_URL, INFLUXDB_DATABASE);
 
         loop {
-            match tokio_serial::new(port, baud_rate).open_native_async() {
+            match tokio_serial::new(SERIAL_PORT, SERIAL_BAUD_RATE).open_native_async() {
                 Ok(serial) => {
                     let reader = BufReader::new(serial);
                     let mut lines = reader.lines();
@@ -204,6 +202,34 @@ async fn main() -> Result<()> {
                 Err(e) => {
                     eprintln!("Failed to open serial port: {}", e);
                     tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                }
+            }
+        }
+    });
+
+    tokio::spawn(async move {
+        let mut interval =
+            tokio::time::interval(tokio::time::Duration::from_secs(BACKUP_INTERVAL_SECS));
+        loop {
+            interval.tick().await;
+            let output = tokio::process::Command::new("influxd")
+                .args(&["backup", "-portable", BACKUP_PATH])
+                .output()
+                .await;
+
+            match output {
+                Ok(output) => {
+                    if !output.status.success() {
+                        eprintln!("Backup command failed with status: {}", output.status);
+                        if !output.stderr.is_empty() {
+                            eprintln!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+                        }
+                    } else {
+                        println!("Backup completed successfully");
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Failed to execute backup command: {}", e);
                 }
             }
         }
