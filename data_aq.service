@@ -7,4 +7,4 @@ ExecStart=/home/dashpi/FSAE-influxdb/target/release/FSAE-influxdb
 Restart=on-failure
 
 [Install]
-Wanted=multi-user.target
+WantedBy=multi-user.target
