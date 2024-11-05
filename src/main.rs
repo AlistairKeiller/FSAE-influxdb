@@ -10,7 +10,7 @@ use tokio_serial::SerialPortBuilderExt;
 const INFLUXDB_URL: &str = "http://localhost:8086";
 const INFLUXDB_DATABASE: &str = "data";
 const CAN_INTERFACE: &str = "can0";
-const SERIAL_PORT: &str = "/dev/ttyUSB0";
+const SERIAL_PORT: &str = "/dev/ttyACM0";
 const SERIAL_BAUD_RATE: u32 = 9600;
 const BACKUP_INTERVAL_SECS: u64 = 60;
 const BACKUP_PATH: &str = "/home/influxdbbackup";
