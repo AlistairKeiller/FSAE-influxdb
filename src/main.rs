@@ -236,3 +236,17 @@ async fn main() -> Result<()> {
 
     Ok(())
 }
+
+
+#[tokio::test]
+async fn add_to_db() {
+    let client = influxdb::Client::new("http://localhost:8086", "data");
+    let reading = PackReading1 {
+        time: chrono::Utc::now(),
+        current: 100,
+        inst_voltage: 200,
+    };
+
+    let query = reading.into_query(PackReading1::NAME);
+    client.query(query).await.unwrap();
+}
