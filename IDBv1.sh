@@ -5,3 +5,4 @@ rm influxdata-archive_compat.key
 
 sudo apt-get update && sudo apt-get install -y influxdb
 sudo service influxdb start
+influx -execute "CREATE DATABASE data"

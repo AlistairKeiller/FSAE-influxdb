@@ -295,7 +295,7 @@ async fn add_uart_readings_to_db() {
 #[tokio::test]
 async fn test_database_backup() {
     let output = tokio::process::Command::new("influxd")
-        .args(&["backup", "-portable", BACKUP_PATH])
+        .args(&["backup", "-portable", "/workspaces/FSAE-influxdb/backup/"])
         .output()
         .await
         .expect("Failed to execute backup command");
