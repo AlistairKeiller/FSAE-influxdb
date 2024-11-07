@@ -237,7 +237,6 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-
 #[tokio::test]
 async fn add_multiple_packreadings_to_db() {
     let client = influxdb::Client::new("http://localhost:8086", "data");
@@ -275,3 +274,34 @@ async fn add_multiple_packreadings_to_db() {
     }
 }
 
+#[tokio::test]
+async fn add_uart_readings_to_db() {
+    let client = influxdb::Client::new("http://localhost:8086", "data");
+
+    for i in 0..125 {
+        let reading = UARTReading {
+            time: chrono::Utc::now(),
+            brake: 1000 + i as u16,
+            shock_a: 2000 + i as u16,
+            shock_b: 3000 + i as u16,
+        };
+
+        client.query(reading.into_query("uart")).await.unwrap();
+
+        tokio::time::sleep(tokio::time::Duration::from_millis(8)).await;
+    }
+}
+
+#[tokio::test]
+async fn test_database_backup() {
+    let output = tokio::process::Command::new("influxd")
+        .args(&["backup", "-portable", BACKUP_PATH])
+        .output()
+        .await
+        .expect("Failed to execute backup command");
+
+    assert!(output.status.success(), "Backup command failed with status: {}", output.status);
+    if !output.stderr.is_empty() {
+        eprintln!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+    }
+}
