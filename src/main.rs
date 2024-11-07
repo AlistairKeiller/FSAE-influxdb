@@ -239,14 +239,39 @@ async fn main() -> Result<()> {
 
 
 #[tokio::test]
-async fn add_to_db() {
+async fn add_multiple_packreadings_to_db() {
     let client = influxdb::Client::new("http://localhost:8086", "data");
-    let reading = PackReading1 {
-        time: chrono::Utc::now(),
-        current: 100,
-        inst_voltage: 200,
-    };
 
-    let query = reading.into_query(PackReading1::NAME);
-    client.query(query).await.unwrap();
+    for i in 0..125 {
+        let reading1 = PackReading1 {
+            time: chrono::Utc::now(),
+            current: 100 + i as i16,
+            inst_voltage: 200 + i as i16,
+        };
+
+        let reading2 = PackReading2 {
+            time: chrono::Utc::now(),
+            dlc: (1 + i % 256) as u8,
+            ccl: (2 + i % 256) as u8,
+            simulated_soc: (3 + i % 256) as u8,
+            high_temp: (4 + i % 256) as u8,
+            low_temp: (5 + i % 256) as u8,
+        };
+
+        let reading3 = PackReading3 {
+            time: chrono::Utc::now(),
+            relay_state: (1 + i % 256) as u8,
+            soc: (50 + i % 256) as u8,
+            resistance: 100 + i as i16,
+            open_voltage: 200 + i as i16,
+            amphours: (10 + i % 256) as u8,
+        };
+
+        client.query(reading1.into_query(PackReading1::NAME)).await.unwrap();
+        client.query(reading2.into_query(PackReading2::NAME)).await.unwrap();
+        client.query(reading3.into_query(PackReading3::NAME)).await.unwrap();
+
+        tokio::time::sleep(tokio::time::Duration::from_millis(8)).await;
+    }
 }
+
