@@ -216,7 +216,7 @@ async fn main() -> Result<()> {
                                     switch_status: data[6],
                                 };
 
-                                println!("{:?}", can_reading_2);
+                                // println!("{:?}", can_reading_2);
 
                                 if let Err(e) = client
                                     .query(can_reading_2.into_query(CanReading2::NAME))
