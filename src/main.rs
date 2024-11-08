@@ -65,8 +65,8 @@ impl PackReading3 {
 struct CanReading1 {
     time: DateTime<Utc>,
     speed_rpm: u16,
-    motor_current: f32,
-    battery_voltage: f32,
+    motor_current: u16,
+    battery_voltage: u16,
     error_code: u16,
 }
 
@@ -186,10 +186,8 @@ async fn main() -> Result<()> {
                                 let can_reading_1 = CanReading1 {
                                     time: Utc::now(),
                                     speed_rpm: u16::from_le_bytes([data[0], data[1]]),
-                                    motor_current: u16::from_le_bytes([data[2], data[3]]) as f32
-                                        * 0.1,
-                                    battery_voltage: u16::from_le_bytes([data[4], data[5]]) as f32
-                                        * 0.1,
+                                    motor_current: u16::from_le_bytes([data[2], data[3]]),
+                                    battery_voltage: u16::from_le_bytes([data[4], data[5]]),
                                     error_code: u16::from_be_bytes([data[6], data[7]]),
                                 };
 
