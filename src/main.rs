@@ -110,6 +110,7 @@ async fn main() -> Result<()> {
                     while let Some(Ok(frame)) = sock.next().await {
                         let data = frame.data();
                         let id = frame.id();
+                        println!("Received frame: {:?} {:?}", id, data);
 
                         // Process PackReading1
                         if let Some(std_id) = StandardId::new(PackReading1::ID) {
@@ -179,52 +180,52 @@ async fn main() -> Result<()> {
                             }
                         }
 
-                        // Process CanReading1
-                        if let Some(std_id) = StandardId::new(CanReading1::ID) {
-                            if id == Id::Standard(std_id) && data.len() >= CanReading1::SIZE {
-                                let can_reading_1 = CanReading1 {
-                                    time: Utc::now(),
-                                    speed_rpm: u16::from_be_bytes([data[0], data[1]]),
-                                    motor_current: u16::from_be_bytes([data[2], data[3]]) as f32
-                                        * 0.1,
-                                    battery_voltage: u16::from_be_bytes([data[4], data[5]]) as f32
-                                        * 0.1,
-                                    error_code: u16::from_be_bytes([data[6], data[7]]),
-                                };
+                        // // Process CanReading1
+                        // if let Some(std_id) = StandardId::new(CanReading1::ID) {
+                        //     if id == Id::Standard(std_id) && data.len() >= CanReading1::SIZE {
+                        //         let can_reading_1 = CanReading1 {
+                        //             time: Utc::now(),
+                        //             speed_rpm: u16::from_be_bytes([data[0], data[1]]),
+                        //             motor_current: u16::from_be_bytes([data[2], data[3]]) as f32
+                        //                 * 0.1,
+                        //             battery_voltage: u16::from_be_bytes([data[4], data[5]]) as f32
+                        //                 * 0.1,
+                        //             error_code: u16::from_be_bytes([data[6], data[7]]),
+                        //         };
 
-                                println!("{:?}", can_reading_1);
+                        //         println!("{:?}", can_reading_1);
 
-                                if let Err(e) = client
-                                    .query(can_reading_1.into_query(CanReading1::NAME))
-                                    .await
-                                {
-                                    eprintln!("Failed to write to InfluxDB: {}", e);
-                                }
-                            }
-                        }
+                        //         if let Err(e) = client
+                        //             .query(can_reading_1.into_query(CanReading1::NAME))
+                        //             .await
+                        //         {
+                        //             eprintln!("Failed to write to InfluxDB: {}", e);
+                        //         }
+                        //     }
+                        // }
 
-                        // Process CanReading1
-                        if let Some(std_id) = StandardId::new(CanReading2::ID) {
-                            if id == Id::Standard(std_id) && data.len() >= CanReading2::SIZE {
-                                let can_reading_2 = CanReading2 {
-                                    time: Utc::now(),
-                                    throttle_signal: data[0],
-                                    controller_temp: data[1] as i8 - 40,
-                                    motor_temp: data[2] as i8 - 30,
-                                    controller_status: data[5],
-                                    switch_status: data[6],
-                                };
+                        // // Process CanReading1
+                        // if let Some(std_id) = StandardId::new(CanReading2::ID) {
+                        //     if id == Id::Standard(std_id) && data.len() >= CanReading2::SIZE {
+                        //         let can_reading_2 = CanReading2 {
+                        //             time: Utc::now(),
+                        //             throttle_signal: data[0],
+                        //             controller_temp: data[1] as i8 - 40,
+                        //             motor_temp: data[2] as i8 - 30,
+                        //             controller_status: data[5],
+                        //             switch_status: data[6],
+                        //         };
 
-                                println!("{:?}", can_reading_2);
+                        //         println!("{:?}", can_reading_2);
 
-                                if let Err(e) = client
-                                    .query(can_reading_2.into_query(CanReading2::NAME))
-                                    .await
-                                {
-                                    eprintln!("Failed to write to InfluxDB: {}", e);
-                                }
-                            }
-                        }
+                        //         if let Err(e) = client
+                        //             .query(can_reading_2.into_query(CanReading2::NAME))
+                        //             .await
+                        //         {
+                        //             eprintln!("Failed to write to InfluxDB: {}", e);
+                        //         }
+                        //     }
+                        // }
                     }
 
                     eprintln!("CAN socket disconnected...");
