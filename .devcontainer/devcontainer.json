@@ -1,6 +1,6 @@
 {
     "name": "Rust",
     "image": "mcr.microsoft.com/devcontainers/rust:latest",
-    "postCreateCommand": "./IDBv1.sh",
+    "postCreateCommand": "./install_influx.sh",
     "forwardPorts": [8086]
 }
