@@ -63,10 +63,10 @@ impl PackReading3 {
 #[derive(InfluxDbWriteable, Debug)]
 struct CanReading1 {
     time: DateTime<Utc>,
-    speed_rpm: u16,          
-    motor_current: f32,      
-    battery_voltage: f32,    
-    error_code: u16,         
+    speed_rpm: u16,
+    motor_current: f32,
+    battery_voltage: f32,
+    error_code: u16,
 }
 
 impl CanReading1 {
@@ -78,11 +78,11 @@ impl CanReading1 {
 #[derive(InfluxDbWriteable, Debug)]
 struct CanReading2 {
     time: DateTime<Utc>,
-    throttle_signal: u8,         
-    controller_temp: i8,         
-    motor_temp: i8,              
-    controller_status: u8,       
-    switch_status: u8,           
+    throttle_signal: u8,
+    controller_temp: i8,
+    motor_temp: i8,
+    controller_status: u8,
+    switch_status: u8,
 }
 
 impl CanReading2 {
@@ -180,13 +180,15 @@ async fn main() -> Result<()> {
                         }
 
                         // Process CanReading1
-                        if let Some(std_id) = StandardId::new(CanReading1::ID as u16) {
+                        if let Some(std_id) = StandardId::new(CanReading1::ID) {
                             if id == Id::Standard(std_id) && data.len() >= CanReading1::SIZE {
                                 let can_reading_1 = CanReading1 {
                                     time: Utc::now(),
                                     speed_rpm: u16::from_be_bytes([data[0], data[1]]),
-                                    motor_current: u16::from_be_bytes([data[2], data[3]]) as f32 * 0.1,
-                                    battery_voltage: u16::from_be_bytes([data[4], data[5]]) as f32 * 0.1,
+                                    motor_current: u16::from_be_bytes([data[2], data[3]]) as f32
+                                        * 0.1,
+                                    battery_voltage: u16::from_be_bytes([data[4], data[5]]) as f32
+                                        * 0.1,
                                     error_code: u16::from_be_bytes([data[6], data[7]]),
                                 };
 
@@ -196,14 +198,13 @@ async fn main() -> Result<()> {
                                     .query(can_reading_1.into_query(CanReading1::NAME))
                                     .await
                                 {
-                                    eprintln!("Failed to write CanReading1 to InfluxDB: {}", e);
+                                    eprintln!("Failed to write to InfluxDB: {}", e);
                                 }
-                                continue;
                             }
                         }
 
-                        // Process CanReading2
-                        if let Some(std_id) = StandardId::new(CanReading2::ID as u16) {
+                        // Process CanReading1
+                        if let Some(std_id) = StandardId::new(CanReading2::ID) {
                             if id == Id::Standard(std_id) && data.len() >= CanReading2::SIZE {
                                 let can_reading_2 = CanReading2 {
                                     time: Utc::now(),
@@ -220,13 +221,12 @@ async fn main() -> Result<()> {
                                     .query(can_reading_2.into_query(CanReading2::NAME))
                                     .await
                                 {
-                                    eprintln!("Failed to write CanReading2 to InfluxDB: {}", e);
+                                    eprintln!("Failed to write to InfluxDB: {}", e);
                                 }
-                                continue;
                             }
                         }
                     }
-                    
+
                     eprintln!("CAN socket disconnected...");
                 }
                 Err(_) => {
@@ -345,9 +345,18 @@ async fn add_multiple_packreadings_to_db() {
             amphours: (10 + i % 256) as u8,
         };
 
-        client.query(reading1.into_query(PackReading1::NAME)).await.unwrap();
-        client.query(reading2.into_query(PackReading2::NAME)).await.unwrap();
-        client.query(reading3.into_query(PackReading3::NAME)).await.unwrap();
+        client
+            .query(reading1.into_query(PackReading1::NAME))
+            .await
+            .unwrap();
+        client
+            .query(reading2.into_query(PackReading2::NAME))
+            .await
+            .unwrap();
+        client
+            .query(reading3.into_query(PackReading3::NAME))
+            .await
+            .unwrap();
 
         tokio::time::sleep(tokio::time::Duration::from_millis(8)).await;
     }
@@ -379,7 +388,11 @@ async fn test_database_backup() {
         .await
         .expect("Failed to execute backup command");
 
-    assert!(output.status.success(), "Backup command failed with status: {}", output.status);
+    assert!(
+        output.status.success(),
+        "Backup command failed with status: {}",
+        output.status
+    );
     if !output.stderr.is_empty() {
         eprintln!("stderr: {}", String::from_utf8_lossy(&output.stderr));
     }
