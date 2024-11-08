@@ -185,10 +185,10 @@ async fn main() -> Result<()> {
                             if id == Id::Extended(std_id) && data.len() >= CanReading1::SIZE {
                                 let can_reading_1 = CanReading1 {
                                     time: Utc::now(),
-                                    speed_rpm: u16::from_be_bytes([data[0], data[1]]),
-                                    motor_current: u16::from_be_bytes([data[2], data[3]]) as f32
+                                    speed_rpm: u16::from_le_bytes([data[0], data[1]]),
+                                    motor_current: u16::from_le_bytes([data[2], data[3]]) as f32
                                         * 0.1,
-                                    battery_voltage: u16::from_be_bytes([data[4], data[5]]) as f32
+                                    battery_voltage: u16::from_le_bytes([data[4], data[5]]) as f32
                                         * 0.1,
                                     error_code: u16::from_be_bytes([data[6], data[7]]),
                                 };
@@ -204,7 +204,7 @@ async fn main() -> Result<()> {
                             }
                         }
 
-                        // Process CanReading1
+                        // Process CanReading2
                         if let Some(std_id) = ExtendedId::new(CanReading2::ID) {
                             if id == Id::Extended(std_id) && data.len() >= CanReading2::SIZE {
                                 let can_reading_2 = CanReading2 {
