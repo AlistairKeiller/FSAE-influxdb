@@ -53,6 +53,7 @@ struct PackReading3 {
     resistance: i16,
     open_voltage: i16,
     amphours: u8,
+    pack_health: u8
 }
 
 impl PackReading3 {
@@ -167,6 +168,7 @@ async fn main() -> Result<()> {
                                     resistance: i16::from_be_bytes([data[2], data[3]]),
                                     open_voltage: i16::from_be_bytes([data[4], data[5]]),
                                     amphours: data[6],
+                                    pack_health: data[7]
                                 };
 
                                 println!("{:?}", pack_reading);
@@ -342,6 +344,7 @@ async fn add_multiple_packreadings_to_db() {
             resistance: 100 + i as i16,
             open_voltage: 200 + i as i16,
             amphours: (10 + i % 256) as u8,
+            pack_health: (100 + i % 256) as u8
         };
 
         client
