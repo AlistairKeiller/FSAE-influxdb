@@ -111,7 +111,6 @@ async fn main() -> Result<()> {
                     while let Some(Ok(frame)) = sock.next().await {
                         let data = frame.data();
                         let id = frame.id();
-                        println!("Received frame: {:?} {:?}", id, data);
 
                         // Process PackReading1
                         if let Some(std_id) = StandardId::new(PackReading1::ID) {
