@@ -122,7 +122,7 @@ async fn main() -> Result<()> {
                                     inst_voltage: i16::from_be_bytes([data[2], data[3]]),
                                 };
 
-                                println!("{:?}", pack_reading);
+                                // println!("{:?}", pack_reading);
 
                                 if let Err(e) = client
                                     .query(pack_reading.into_query(PackReading1::NAME))
@@ -146,7 +146,7 @@ async fn main() -> Result<()> {
                                     low_temp: data[4],
                                 };
 
-                                println!("{:?}", pack_reading);
+                                // println!("{:?}", pack_reading);
 
                                 if let Err(e) = client
                                     .query(pack_reading.into_query(PackReading2::NAME))
@@ -171,7 +171,7 @@ async fn main() -> Result<()> {
                                     pack_health: data[7]
                                 };
 
-                                println!("{:?}", pack_reading);
+                                // println!("{:?}", pack_reading);
 
                                 if let Err(e) = client
                                     .query(pack_reading.into_query(PackReading3::NAME))
@@ -193,7 +193,7 @@ async fn main() -> Result<()> {
                                     error_code: u16::from_be_bytes([data[6], data[7]]),
                                 };
 
-                                println!("{:?}", can_reading_1);
+                                // println!("{:?}", can_reading_1);
 
                                 if let Err(e) = client
                                     .query(can_reading_1.into_query(CanReading1::NAME))
@@ -216,7 +216,7 @@ async fn main() -> Result<()> {
                                     switch_status: data[6],
                                 };
 
-                                println!("{:?}", can_reading_2);
+                                // println!("{:?}", can_reading_2);
 
                                 if let Err(e) = client
                                     .query(can_reading_2.into_query(CanReading2::NAME))
@@ -262,7 +262,7 @@ async fn main() -> Result<()> {
                                     shock_b,
                                 };
 
-                                println!("{:?}", reading);
+                                // println!("{:?}", reading);
 
                                 if let Err(e) = client.query(reading.into_query("uart")).await {
                                     eprintln!("Failed to write to InfluxDB: {}", e);
