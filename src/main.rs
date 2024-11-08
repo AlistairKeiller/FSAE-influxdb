@@ -61,6 +61,35 @@ impl PackReading3 {
 }
 
 #[derive(InfluxDbWriteable, Debug)]
+struct CanReading1 {
+    time: DateTime<Utc>,
+    driving_direction: u8,
+    motor_rpm: u16,
+    error_code: u8,
+}
+
+impl CanReading1 {
+    const ID: u32 = 0x10F8109A;
+    const SIZE: usize = 8;
+    const NAME: &str = "can_reading1";
+}
+
+#[derive(InfluxDbWriteable, Debug)]
+struct CanReading2 {
+    time: DateTime<Utc>,
+    battery_voltage: f32,
+    motor_current: f32,
+    motor_temp: f32,
+    controller_temp: f32,
+}
+
+impl CanReading2 {
+    const ID: u32 = 0x10F8108D;
+    const SIZE: usize = 8;
+    const NAME: &str = "can_reading2";
+}
+
+#[derive(InfluxDbWriteable, Debug)]
 struct UARTReading {
     time: DateTime<Utc>,
     brake: u16,
@@ -147,7 +176,53 @@ async fn main() -> Result<()> {
                                 }
                             }
                         }
+
+                        // Process CanReading1
+                        if let Some(std_id) = StandardId::new(CanReading1::ID as u16) {
+                            if id == Id::Standard(std_id) && data.len() >= CanReading1::SIZE {
+                                let can_reading_1 = CanReading1 {
+                                    time: Utc::now(),
+                                    driving_direction: data[0] & 0x03,
+                                    motor_rpm: u16::from_le_bytes([data[1], data[2]]),
+                                    error_code: data[3],
+                                };
+
+                                println!("{:?}", can_reading_1);
+
+                                if let Err(e) = client
+                                    .query(can_reading_1.into_query(CanReading1::NAME))
+                                    .await
+                                {
+                                    eprintln!("Failed to write CanReading1 to InfluxDB: {}", e);
+                                }
+                                continue;
+                            }
+                        }
+
+                        // Process CanReading2
+                        if let Some(std_id) = StandardId::new(CanReading2::ID as u16) {
+                            if id == Id::Standard(std_id) && data.len() >= CanReading2::SIZE {
+                                let can_reading_2 = CanReading2 {
+                                    time: Utc::now(),
+                                    battery_voltage: u16::from_le_bytes([data[0], data[1]]) as f32 * 0.1,
+                                    motor_current: u16::from_le_bytes([data[2], data[3]]) as f32 * 0.1,
+                                    motor_temp: u16::from_le_bytes([data[4], data[5]]) as f32 * 0.1,
+                                    controller_temp: u16::from_le_bytes([data[6], data[7]]) as f32 * 0.1,
+                                };
+
+                                println!("{:?}", can_reading_2);
+
+                                if let Err(e) = client
+                                    .query(can_reading_2.into_query(CanReading2::NAME))
+                                    .await
+                                {
+                                    eprintln!("Failed to write CanReading2 to InfluxDB: {}", e);
+                                }
+                                continue;
+                            }
+                        }
                     }
+                    
                     eprintln!("CAN socket disconnected...");
                 }
                 Err(_) => {
