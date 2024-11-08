@@ -63,13 +63,14 @@ impl PackReading3 {
 #[derive(InfluxDbWriteable, Debug)]
 struct CanReading1 {
     time: DateTime<Utc>,
-    driving_direction: u8,
-    motor_rpm: u16,
-    error_code: u8,
+    speed_rpm: u16,          
+    motor_current: f32,      
+    battery_voltage: f32,    
+    error_code: u16,         
 }
 
 impl CanReading1 {
-    const ID: u32 = 0x10F8109A;
+    const ID: u32 = 0x0CF11E05;
     const SIZE: usize = 8;
     const NAME: &str = "can_reading1";
 }
@@ -77,14 +78,15 @@ impl CanReading1 {
 #[derive(InfluxDbWriteable, Debug)]
 struct CanReading2 {
     time: DateTime<Utc>,
-    battery_voltage: f32,
-    motor_current: f32,
-    motor_temp: f32,
-    controller_temp: f32,
+    throttle_signal: u8,         
+    controller_temp: i8,         
+    motor_temp: i8,              
+    controller_status: u8,       
+    switch_status: u8,           
 }
 
 impl CanReading2 {
-    const ID: u32 = 0x10F8108D;
+    const ID: u32 = 0x0CF11F05;
     const SIZE: usize = 8;
     const NAME: &str = "can_reading2";
 }
@@ -182,9 +184,10 @@ async fn main() -> Result<()> {
                             if id == Id::Standard(std_id) && data.len() >= CanReading1::SIZE {
                                 let can_reading_1 = CanReading1 {
                                     time: Utc::now(),
-                                    driving_direction: data[0] & 0x03,
-                                    motor_rpm: u16::from_le_bytes([data[1], data[2]]),
-                                    error_code: data[3],
+                                    speed_rpm: u16::from_be_bytes([data[0], data[1]]),
+                                    motor_current: u16::from_be_bytes([data[2], data[3]]) as f32 * 0.1,
+                                    battery_voltage: u16::from_be_bytes([data[4], data[5]]) as f32 * 0.1,
+                                    error_code: u16::from_be_bytes([data[6], data[7]]),
                                 };
 
                                 println!("{:?}", can_reading_1);
@@ -204,10 +207,11 @@ async fn main() -> Result<()> {
                             if id == Id::Standard(std_id) && data.len() >= CanReading2::SIZE {
                                 let can_reading_2 = CanReading2 {
                                     time: Utc::now(),
-                                    battery_voltage: u16::from_le_bytes([data[0], data[1]]) as f32 * 0.1,
-                                    motor_current: u16::from_le_bytes([data[2], data[3]]) as f32 * 0.1,
-                                    motor_temp: u16::from_le_bytes([data[4], data[5]]) as f32 * 0.1,
-                                    controller_temp: u16::from_le_bytes([data[6], data[7]]) as f32 * 0.1,
+                                    throttle_signal: data[0],
+                                    controller_temp: data[1] as i8 - 40,
+                                    motor_temp: data[2] as i8 - 30,
+                                    controller_status: data[5],
+                                    switch_status: data[6],
                                 };
 
                                 println!("{:?}", can_reading_2);
