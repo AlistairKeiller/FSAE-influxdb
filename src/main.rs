@@ -437,7 +437,7 @@ async fn main() -> Result<()> {
 }
 
 #[tokio::test]
-async fn add_multiple_packreadings_to_db() {
+async fn test_add_multiple_packreadings_to_db() {
     let client = influxdb::Client::new("http://localhost:8086", "data");
 
     for i in 0..125 {
@@ -484,7 +484,7 @@ async fn add_multiple_packreadings_to_db() {
 }
 
 #[tokio::test]
-async fn add_uart_readings_to_db() {
+async fn test_add_uart_readings_to_db() {
     let client = influxdb::Client::new("http://localhost:8086", "data");
 
     for i in 0..125 {
@@ -503,7 +503,7 @@ async fn add_uart_readings_to_db() {
 }
 
 #[tokio::test]
-async fn test_database_backup() {
+async fn test_backup_database() {
     let output = tokio::process::Command::new("influxd")
         .args(&["backup", "-portable", "/workspaces/FSAE-influxdb/backup/"])
         .output()
