@@ -365,6 +365,15 @@ async fn main() -> Result<()> {
             tokio::time::interval(tokio::time::Duration::from_secs(BACKUP_INTERVAL_SECS));
         loop {
             interval.tick().await;
+
+            // Move old backup to BACKUP_PATH + "old"
+            let old_backup_path = format!("{}{}", BACKUP_PATH, "old");
+            if let Err(e) = tokio::fs::rename(BACKUP_PATH, &old_backup_path).await {
+                eprintln!("Failed to rename old backup: {}", e);
+                continue;
+            }
+
+            // Create new backup
             let output = tokio::process::Command::new("influxd")
                 .args(&["backup", "-portable", BACKUP_PATH])
                 .output()
@@ -379,6 +388,11 @@ async fn main() -> Result<()> {
                         }
                     } else {
                         println!("Backup completed successfully");
+
+                        // Delete old backup
+                        if let Err(e) = tokio::fs::remove_dir_all(&old_backup_path).await {
+                            eprintln!("Failed to delete old backup: {}", e);
+                        }
                     }
                 }
                 Err(e) => {
