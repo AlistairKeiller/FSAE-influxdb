@@ -129,9 +129,15 @@ impl RightESCReading2 {
 #[derive(InfluxDbWriteable, Debug)]
 struct UARTReading {
     time: DateTime<Utc>,
-    brake: u16,
+    brake_a: u16,
+    brake_b: u16,
     shock_a: u16,
     shock_b: u16,
+}
+
+impl UARTReading {
+    const SIZE: usize = 4;
+    const NAME: &str = "uart";
 }
 
 #[tokio::main]
@@ -327,22 +333,24 @@ async fn main() -> Result<()> {
 
                     while let Ok(Some(line)) = lines.next_line().await {
                         let parts: Vec<&str> = line.trim().split_whitespace().collect();
-                        if parts.len() == 3 {
-                            if let (Ok(brake), Ok(shock_a), Ok(shock_b)) = (
+                        if parts.len() == UARTReading::SIZE {
+                            if let (Ok(brake_a), Ok(brake_b), Ok(shock_a), Ok(shock_b)) = (
                                 parts[0].parse::<u16>(),
                                 parts[1].parse::<u16>(),
                                 parts[2].parse::<u16>(),
+                                parts[3].parse::<u16>(),
                             ) {
                                 let reading = UARTReading {
                                     time: Utc::now(),
-                                    brake,
+                                    brake_a,
+                                    brake_b,
                                     shock_a,
                                     shock_b,
                                 };
 
                                 // println!("{:?}", reading);
 
-                                if let Err(e) = client.query(reading.into_query("uart")).await {
+                                if let Err(e) = client.query(reading.into_query(UARTReading::NAME)).await {
                                     eprintln!("Failed to write to InfluxDB: {}", e);
                                 }
                             } else {
@@ -482,9 +490,10 @@ async fn add_uart_readings_to_db() {
     for i in 0..125 {
         let reading = UARTReading {
             time: chrono::Utc::now(),
-            brake: 1000 + i as u16,
-            shock_a: 2000 + i as u16,
-            shock_b: 3000 + i as u16,
+            brake_a: 1000 + i as u16,
+            brake_b: 2000 + i as u16,
+            shock_a: 3000 + i as u16,
+            shock_b: 4000 + i as u16,
         };
 
         client.query(reading.into_query("uart")).await.unwrap();
