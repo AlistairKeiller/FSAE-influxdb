@@ -63,7 +63,7 @@ impl PackReading3 {
 }
 
 #[derive(InfluxDbWriteable, Debug)]
-struct CanReading1 {
+struct ESCReading1 {
     time: DateTime<Utc>,
     speed_rpm: u16,
     motor_current: u16,
@@ -71,14 +71,14 @@ struct CanReading1 {
     error_code: u16,
 }
 
-impl CanReading1 {
+impl ESCReading1 {
     const ID: u32 = 0x0CF11E05;
     const SIZE: usize = 8;
-    const NAME: &str = "can_reading1";
+    const NAME: &str = "esc_reading1";
 }
 
 #[derive(InfluxDbWriteable, Debug)]
-struct CanReading2 {
+struct ESCReading2 {
     time: DateTime<Utc>,
     throttle_signal: u8,
     controller_temp: i8,
@@ -87,10 +87,10 @@ struct CanReading2 {
     switch_status: u8,
 }
 
-impl CanReading2 {
+impl ESCReading2 {
     const ID: u32 = 0x0CF11F05;
     const SIZE: usize = 8;
-    const NAME: &str = "can_reading2";
+    const NAME: &str = "esc_reading2";
 }
 
 #[derive(InfluxDbWriteable, Debug)]
@@ -182,10 +182,10 @@ async fn main() -> Result<()> {
                             }
                         }
 
-                        // Process CanReading1
-                        if let Some(std_id) = ExtendedId::new(CanReading1::ID) {
-                            if id == Id::Extended(std_id) && data.len() >= CanReading1::SIZE {
-                                let can_reading_1 = CanReading1 {
+                        // Process ESCReading1
+                        if let Some(std_id) = ExtendedId::new(ESCReading1::ID) {
+                            if id == Id::Extended(std_id) && data.len() >= ESCReading1::SIZE {
+                                let esc_reading_1 = ESCReading1 {
                                     time: Utc::now(),
                                     speed_rpm: u16::from_le_bytes([data[0], data[1]]),
                                     motor_current: u16::from_le_bytes([data[2], data[3]]),
@@ -193,10 +193,10 @@ async fn main() -> Result<()> {
                                     error_code: u16::from_be_bytes([data[6], data[7]]),
                                 };
 
-                                // println!("{:?}", can_reading_1);
+                                // println!("{:?}", esc_reading_1);
 
                                 if let Err(e) = client
-                                    .query(can_reading_1.into_query(CanReading1::NAME))
+                                    .query(esc_reading_1.into_query(ESCReading1::NAME))
                                     .await
                                 {
                                     eprintln!("Failed to write to InfluxDB: {}", e);
@@ -204,10 +204,10 @@ async fn main() -> Result<()> {
                             }
                         }
 
-                        // Process CanReading2
-                        if let Some(std_id) = ExtendedId::new(CanReading2::ID) {
-                            if id == Id::Extended(std_id) && data.len() >= CanReading2::SIZE {
-                                let can_reading_2 = CanReading2 {
+                        // Process ESCReading2
+                        if let Some(std_id) = ExtendedId::new(ESCReading2::ID) {
+                            if id == Id::Extended(std_id) && data.len() >= ESCReading2::SIZE {
+                                let esc_reading_2 = ESCReading2 {
                                     time: Utc::now(),
                                     throttle_signal: data[0],
                                     controller_temp: data[1] as i8 - 40,
@@ -216,10 +216,10 @@ async fn main() -> Result<()> {
                                     switch_status: data[6],
                                 };
 
-                                // println!("{:?}", can_reading_2);
+                                // println!("{:?}", esc_reading_2);
 
                                 if let Err(e) = client
-                                    .query(can_reading_2.into_query(CanReading2::NAME))
+                                    .query(esc_reading_2.into_query(ESCReading2::NAME))
                                     .await
                                 {
                                     eprintln!("Failed to write to InfluxDB: {}", e);
