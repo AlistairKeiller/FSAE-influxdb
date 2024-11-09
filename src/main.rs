@@ -74,7 +74,7 @@ struct LeftESCReading1 {
 }
 
 impl LeftESCReading1 {
-    const ID: u32 = 0x0CF11E05;
+    const ID: u32 = 0x0CF11E06;
     const SIZE: usize = 8;
     const NAME: &str = "left_esc_reading1";
 }
@@ -90,7 +90,7 @@ struct LeftESCReading2 {
 }
 
 impl LeftESCReading2 {
-    const ID: u32 = 0x0CF11F05;
+    const ID: u32 = 0x0CF11F06;
     const SIZE: usize = 8;
     const NAME: &str = "left_esc_reading2";
 }
@@ -105,7 +105,7 @@ struct RightESCReading1 {
 }
 
 impl RightESCReading1 {
-    const ID: u32 = 0x0CF11E06;
+    const ID: u32 = 0x0CF11E05;
     const SIZE: usize = 8;
     const NAME: &str = "right_esc_reading1";
 }
@@ -121,7 +121,7 @@ struct RightESCReading2 {
 }
 
 impl RightESCReading2 {
-    const ID: u32 = 0x0CF11F06;
+    const ID: u32 = 0x0CF11F05;
     const SIZE: usize = 8;
     const NAME: &str = "right_esc_reading2";
 }
