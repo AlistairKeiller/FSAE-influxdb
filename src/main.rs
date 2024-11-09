@@ -1,3 +1,5 @@
+use std::os::unix::fs::PermissionsExt;
+
 use chrono::{DateTime, Utc};
 use embedded_can::Frame as EmbeddedFrame;
 use futures_util::StreamExt;
@@ -53,7 +55,7 @@ struct PackReading3 {
     resistance: i16,
     open_voltage: i16,
     amphours: u8,
-    pack_health: u8
+    pack_health: u8,
 }
 
 impl PackReading3 {
@@ -199,7 +201,7 @@ async fn main() -> Result<()> {
                                     resistance: i16::from_be_bytes([data[2], data[3]]),
                                     open_voltage: i16::from_be_bytes([data[4], data[5]]),
                                     amphours: data[6],
-                                    pack_health: data[7]
+                                    pack_health: data[7],
                                 };
 
                                 // println!("{:?}", pack_reading);
@@ -373,6 +375,15 @@ async fn main() -> Result<()> {
                 continue;
             }
 
+            // Change permissions of old backup folder to 777
+            if let Err(e) =
+                tokio::fs::set_permissions(&old_backup_path, std::fs::Permissions::from_mode(0o777))
+                    .await
+            {
+                eprintln!("Failed to set permissions for old backup: {}", e);
+                continue;
+            }
+
             // Create new backup
             let output = tokio::process::Command::new("influxd")
                 .args(&["backup", "-portable", BACKUP_PATH])
@@ -388,6 +399,16 @@ async fn main() -> Result<()> {
                         }
                     } else {
                         println!("Backup completed successfully");
+
+                        // Change permissions of new backup folder to 777
+                        if let Err(e) = tokio::fs::set_permissions(
+                            BACKUP_PATH,
+                            std::fs::Permissions::from_mode(0o777),
+                        )
+                        .await
+                        {
+                            eprintln!("Failed to set permissions for new backup: {}", e);
+                        }
 
                         // Delete old backup
                         if let Err(e) = tokio::fs::remove_dir_all(&old_backup_path).await {
@@ -434,7 +455,7 @@ async fn add_multiple_packreadings_to_db() {
             resistance: 100 + i as i16,
             open_voltage: 200 + i as i16,
             amphours: (10 + i % 256) as u8,
-            pack_health: (100 + i % 256) as u8
+            pack_health: (100 + i % 256) as u8,
         };
 
         client
