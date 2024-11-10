@@ -384,26 +384,19 @@ async fn main() -> Result<()> {
                 eprintln!("Failed to delete old backup: {}", e);
             }
 
-            // Move old backup to BACKUP_PATH + "old"
+            // Move current backup to old backup
             if let Err(e) = tokio::fs::rename(BACKUP_PATH, &old_backup_path).await {
                 eprintln!("Failed to rename old backup: {}", e);
-                continue;
-            }
-
-            // Change permissions of old backup folder to 777
-            if let Err(e) = tokio::process::Command::new("chmod")
-                .arg("777")
-                .arg(&old_backup_path)
-                .status()
-                .await
-            {
-                eprintln!("Failed to set permissions for old backup: {}", e);
-                continue;
             }
 
             // Create new backup
-            let output = tokio::process::Command::new("influxd")
-                .args(&["backup", "-portable", BACKUP_PATH])
+            let output = tokio::process::Command::new("influx")
+                .args(&[
+                    "backup",
+                    "--bucket",
+                    INFLUXDB_DATABASE,
+                    BACKUP_PATH,
+                ])
                 .output()
                 .await;
 
@@ -416,21 +409,6 @@ async fn main() -> Result<()> {
                         }
                     } else {
                         println!("Backup completed successfully");
-
-                        // Change permissions of new backup folder to 777
-                        if let Err(e) = tokio::process::Command::new("chmod")
-                            .arg("777")
-                            .arg(&old_backup_path)
-                            .status()
-                            .await
-                        {
-                            eprintln!("Failed to set permissions for new backup: {}", e);
-                        }
-
-                        // Delete old backup
-                        if let Err(e) = tokio::fs::remove_dir_all(&old_backup_path).await {
-                            eprintln!("Failed to delete old backup: {}", e);
-                        }
                     }
                 }
                 Err(e) => {
