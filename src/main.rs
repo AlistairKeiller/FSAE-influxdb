@@ -384,7 +384,7 @@ async fn main() -> Result<()> {
                     "backup",
                     "--bucket",
                     INFLUXDB_DATABASE,
-                    BACKUP_PATH+"new",
+                    BACKUP_PATH + "new",
                 ])
                 .output()
                 .await;
@@ -403,7 +403,9 @@ async fn main() -> Result<()> {
                                 eprintln!("Failed to delete existing backup: {}", e);
                             }
                         }
-                        if let Err(e) = tokio::fs::rename(BACKUP_PATH + "new", BACKUP_PATH).await {
+                        if let Err(e) =
+                            tokio::fs::rename(BACKUP_PATH.to_owned() + "new", BACKUP_PATH).await
+                        {
                             eprintln!("Failed to rename new backup directory: {}", e);
                         }
                     }
