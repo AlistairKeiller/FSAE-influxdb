@@ -350,7 +350,9 @@ async fn main() -> Result<()> {
 
                                 // println!("{:?}", reading);
 
-                                if let Err(e) = client.query(reading.into_query(UARTReading::NAME)).await {
+                                if let Err(e) =
+                                    client.query(reading.into_query(UARTReading::NAME)).await
+                                {
                                     eprintln!("Failed to write to InfluxDB: {}", e);
                                 }
                             } else {
@@ -389,9 +391,11 @@ async fn main() -> Result<()> {
             }
 
             // Change permissions of old backup folder to 777
-            if let Err(e) =
-                tokio::fs::set_permissions(&old_backup_path, std::fs::Permissions::from_mode(0o777))
-                    .await
+            if let Err(e) = tokio::process::Command::new("chmod")
+                .arg("777")
+                .arg(&old_backup_path)
+                .status()
+                .await
             {
                 eprintln!("Failed to set permissions for old backup: {}", e);
                 continue;
@@ -414,11 +418,11 @@ async fn main() -> Result<()> {
                         println!("Backup completed successfully");
 
                         // Change permissions of new backup folder to 777
-                        if let Err(e) = tokio::fs::set_permissions(
-                            BACKUP_PATH,
-                            std::fs::Permissions::from_mode(0o777),
-                        )
-                        .await
+                        if let Err(e) = tokio::process::Command::new("chmod")
+                            .arg("777")
+                            .arg(&old_backup_path)
+                            .status()
+                            .await
                         {
                             eprintln!("Failed to set permissions for new backup: {}", e);
                         }
