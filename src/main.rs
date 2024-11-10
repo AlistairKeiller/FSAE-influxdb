@@ -403,7 +403,7 @@ async fn main() -> Result<()> {
                             }
                         }
                         if let Err(e) =
-                            tokio::fs::rename(BACKUP_PATH.to_owned() + "new", BACKUP_PATH).await
+                            tokio::fs::rename(BACKUP_PATH.to_owned() + "_new", BACKUP_PATH).await
                         {
                             eprintln!("Failed to rename new backup directory: {}", e);
                         }
