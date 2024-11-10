@@ -379,7 +379,7 @@ async fn main() -> Result<()> {
             interval.tick().await;
 
             // Create new backup
-            let output = tokio::process::Command::new("influx")
+            let output = tokio::process::Command::new("influxd")
                 .args(&[
                     "backup",
                     "-portable",
