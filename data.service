@@ -3,6 +3,7 @@ After=network.target systemd-networkd-wait-online.service
 Wants=systemd-networkd-wait-online.service
 
 [Service]
+User=dashpi
 ExecStart=/home/dashpi/FSAE-influxdb/target/release/FSAE-influxdb
 Restart=on-failure
 

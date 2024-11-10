@@ -378,24 +378,13 @@ async fn main() -> Result<()> {
         loop {
             interval.tick().await;
 
-            // Delete old backup
-            let old_backup_path = format!("{}{}", BACKUP_PATH, "old");
-            if let Err(e) = tokio::fs::remove_dir_all(&old_backup_path).await {
-                eprintln!("Failed to delete old backup: {}", e);
-            }
-
-            // Move current backup to old backup
-            if let Err(e) = tokio::fs::rename(BACKUP_PATH, &old_backup_path).await {
-                eprintln!("Failed to rename old backup: {}", e);
-            }
-
             // Create new backup
             let output = tokio::process::Command::new("influx")
                 .args(&[
                     "backup",
                     "--bucket",
                     INFLUXDB_DATABASE,
-                    BACKUP_PATH,
+                    BACKUP_PATH+"new",
                 ])
                 .output()
                 .await;
@@ -409,6 +398,14 @@ async fn main() -> Result<()> {
                         }
                     } else {
                         println!("Backup completed successfully");
+                        if tokio::fs::metadata(BACKUP_PATH).await.is_ok() {
+                            if let Err(e) = tokio::fs::remove_dir_all(BACKUP_PATH).await {
+                                eprintln!("Failed to delete existing backup: {}", e);
+                            }
+                        }
+                        if let Err(e) = tokio::fs::rename(BACKUP_PATH.to_owned() + "new", BACKUP_PATH).await {
+                            eprintln!("Failed to rename new backup directory: {}", e);
+                        }
                     }
                 }
                 Err(e) => {
