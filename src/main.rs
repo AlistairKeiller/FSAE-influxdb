@@ -377,12 +377,12 @@ async fn main() -> Result<()> {
             interval.tick().await;
 
             // Delete old backup
+            let old_backup_path = format!("{}{}", BACKUP_PATH, "old");
             if let Err(e) = tokio::fs::remove_dir_all(&old_backup_path).await {
                 eprintln!("Failed to delete old backup: {}", e);
             }
 
             // Move old backup to BACKUP_PATH + "old"
-            let old_backup_path = format!("{}{}", BACKUP_PATH, "old");
             if let Err(e) = tokio::fs::rename(BACKUP_PATH, &old_backup_path).await {
                 eprintln!("Failed to rename old backup: {}", e);
                 continue;
