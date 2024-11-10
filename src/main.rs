@@ -16,7 +16,7 @@ const CAN_INTERFACE: &str = "can0";
 const SERIAL_PORT: &str = "/dev/ttyACM0";
 const SERIAL_BAUD_RATE: u32 = 9600;
 const BACKUP_INTERVAL_SECS: u64 = 60;
-const BACKUP_PATH: &str = "/home/dashpi/influx_db_backup";
+const BACKUP_PATH: &str = "/media/dashpi/SANDISK/influx_db_backup";
 
 #[derive(InfluxDbWriteable, Debug)]
 struct PackReading1 {
