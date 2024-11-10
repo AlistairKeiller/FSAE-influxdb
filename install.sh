@@ -11,7 +11,8 @@ sudo mkdir -p /etc/apt/keyrings/
 wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/grafana.gpg > /dev/null
 echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main" | sudo tee /etc/apt/sources.list.d/grafana.list
 sudo apt-get update && apt-get install -y grafana
-sudo service grafana-server start
+sudo /bin/systemctl enable grafana-server
+sudo /bin/systemctl start grafana-server
 
 sudo cp 80-can.network /etc/systemd/network/80-can.network
 sudo cp data.service /etc/systemd/system/data.service
