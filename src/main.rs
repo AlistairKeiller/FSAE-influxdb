@@ -1,6 +1,6 @@
 use std::os::unix::fs::PermissionsExt;
 
-use chrono::{DateTime, Utc};
+use chrono::{format, DateTime, Utc};
 use embedded_can::Frame as EmbeddedFrame;
 use futures_util::StreamExt;
 use influxdb::{Client, InfluxDbWriteable};
@@ -384,7 +384,7 @@ async fn main() -> Result<()> {
                     "backup",
                     "--bucket",
                     INFLUXDB_DATABASE,
-                    BACKUP_PATH + "new",
+                    (BACKUP_PATH.to_owned() + "new").as_str(),
                 ])
                 .output()
                 .await;
