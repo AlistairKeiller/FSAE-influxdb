@@ -382,8 +382,7 @@ async fn main() -> Result<()> {
             let output = tokio::process::Command::new("influx")
                 .args(&[
                     "backup",
-                    "--bucket",
-                    INFLUXDB_DATABASE,
+                    "-portable",
                     (BACKUP_PATH.to_owned() + "new").as_str(),
                 ])
                 .output()
