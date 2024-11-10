@@ -161,7 +161,8 @@ async fn main() -> Result<()> {
                                     inst_voltage: i16::from_be_bytes([data[2], data[3]]),
                                 };
 
-                                // println!("{:?}", pack_reading);
+                                #[cfg(debug_assertions)]
+                                println!("{:?}", pack_reading);
 
                                 if let Err(e) = client
                                     .query(pack_reading.into_query(PackReading1::NAME))
@@ -185,7 +186,8 @@ async fn main() -> Result<()> {
                                     low_temp: data[4],
                                 };
 
-                                // println!("{:?}", pack_reading);
+                                #[cfg(debug_assertions)]
+                                println!("{:?}", pack_reading);
 
                                 if let Err(e) = client
                                     .query(pack_reading.into_query(PackReading2::NAME))
@@ -210,7 +212,8 @@ async fn main() -> Result<()> {
                                     pack_health: data[7],
                                 };
 
-                                // println!("{:?}", pack_reading);
+                                #[cfg(debug_assertions)]
+                                println!("{:?}", pack_reading);
 
                                 if let Err(e) = client
                                     .query(pack_reading.into_query(PackReading3::NAME))
@@ -232,7 +235,8 @@ async fn main() -> Result<()> {
                                     error_code: u16::from_be_bytes([data[6], data[7]]),
                                 };
 
-                                // println!("{:?}", esc_reading_1);
+                                #[cfg(debug_assertions)]
+                                println!("{:?}", esc_reading_1);
 
                                 if let Err(e) = client
                                     .query(esc_reading_1.into_query(LeftESCReading1::NAME))
@@ -255,7 +259,8 @@ async fn main() -> Result<()> {
                                     switch_status: data[6],
                                 };
 
-                                // println!("{:?}", esc_reading_2);
+                                #[cfg(debug_assertions)]
+                                println!("{:?}", esc_reading_2);
 
                                 if let Err(e) = client
                                     .query(esc_reading_2.into_query(LeftESCReading2::NAME))
@@ -277,7 +282,8 @@ async fn main() -> Result<()> {
                                     error_code: u16::from_be_bytes([data[6], data[7]]),
                                 };
 
-                                // println!("{:?}", esc_reading_1);
+                                #[cfg(debug_assertions)]
+                                println!("{:?}", esc_reading_1);
 
                                 if let Err(e) = client
                                     .query(esc_reading_1.into_query(RightESCReading1::NAME))
@@ -300,7 +306,8 @@ async fn main() -> Result<()> {
                                     switch_status: data[6],
                                 };
 
-                                // println!("{:?}", esc_reading_2);
+                                #[cfg(debug_assertions)]
+                                println!("{:?}", esc_reading_2);
 
                                 if let Err(e) = client
                                     .query(esc_reading_2.into_query(RightESCReading2::NAME))
@@ -348,7 +355,8 @@ async fn main() -> Result<()> {
                                     shock_b,
                                 };
 
-                                // println!("{:?}", reading);
+                                #[cfg(debug_assertions)]
+                                println!("{:?}", reading);
 
                                 if let Err(e) =
                                     client.query(reading.into_query(UARTReading::NAME)).await
