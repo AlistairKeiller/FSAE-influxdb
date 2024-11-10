@@ -378,49 +378,49 @@ async fn main() -> Result<()> {
         }
     });
 
-    tokio::spawn(async move {
-        let mut interval =
-            tokio::time::interval(tokio::time::Duration::from_secs(BACKUP_INTERVAL_SECS));
-        loop {
-            interval.tick().await;
+    // tokio::spawn(async move {
+    //     let mut interval =
+    //         tokio::time::interval(tokio::time::Duration::from_secs(BACKUP_INTERVAL_SECS));
+    //     loop {
+    //         interval.tick().await;
 
-            // Create new backup
-            let output = tokio::process::Command::new("influxd")
-                .args(&[
-                    "backup",
-                    "-portable",
-                    (BACKUP_PATH.to_owned() + "_new").as_str(),
-                ])
-                .output()
-                .await;
+    //         // Create new backup
+    //         let output = tokio::process::Command::new("influxd")
+    //             .args(&[
+    //                 "backup",
+    //                 "-portable",
+    //                 (BACKUP_PATH.to_owned() + "_new").as_str(),
+    //             ])
+    //             .output()
+    //             .await;
 
-            match output {
-                Ok(output) => {
-                    if !output.status.success() {
-                        eprintln!("Backup command failed with status: {}", output.status);
-                        if !output.stderr.is_empty() {
-                            eprintln!("stderr: {}", String::from_utf8_lossy(&output.stderr));
-                        }
-                    } else {
-                        println!("Backup completed successfully");
-                        if tokio::fs::metadata(BACKUP_PATH).await.is_ok() {
-                            if let Err(e) = tokio::fs::remove_dir_all(BACKUP_PATH).await {
-                                eprintln!("Failed to delete existing backup: {}", e);
-                            }
-                        }
-                        if let Err(e) =
-                            tokio::fs::rename(BACKUP_PATH.to_owned() + "_new", BACKUP_PATH).await
-                        {
-                            eprintln!("Failed to rename new backup directory: {}", e);
-                        }
-                    }
-                }
-                Err(e) => {
-                    eprintln!("Failed to execute backup command: {}", e);
-                }
-            }
-        }
-    });
+    //         match output {
+    //             Ok(output) => {
+    //                 if !output.status.success() {
+    //                     eprintln!("Backup command failed with status: {}", output.status);
+    //                     if !output.stderr.is_empty() {
+    //                         eprintln!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+    //                     }
+    //                 } else {
+    //                     println!("Backup completed successfully");
+    //                     if tokio::fs::metadata(BACKUP_PATH).await.is_ok() {
+    //                         if let Err(e) = tokio::fs::remove_dir_all(BACKUP_PATH).await {
+    //                             eprintln!("Failed to delete existing backup: {}", e);
+    //                         }
+    //                     }
+    //                     if let Err(e) =
+    //                         tokio::fs::rename(BACKUP_PATH.to_owned() + "_new", BACKUP_PATH).await
+    //                     {
+    //                         eprintln!("Failed to rename new backup directory: {}", e);
+    //                     }
+    //                 }
+    //             }
+    //             Err(e) => {
+    //                 eprintln!("Failed to execute backup command: {}", e);
+    //             }
+    //         }
+    //     }
+    // });
 
     tokio::signal::ctrl_c().await?;
 
